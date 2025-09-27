@@ -22,6 +22,11 @@ class PolygonClient:
     def __init__(self, api_key: str, trace: bool = False, session: Optional[requests.Session] = None):
         self.api_key = api_key
         self.session = session or requests.Session()
+        # Ensure auth works for pagination next_url without query apiKey
+        self.session.headers.update({
+            "Authorization": f"Bearer {api_key}",
+            "X-Polygon-API-Key": api_key,
+        })
         self.trace = trace
 
     def list_news(self, from_date: str, to_date: str, tickers: Optional[List[str]] = None, page_size: int = 50) -> List[Dict[str, Any]]:

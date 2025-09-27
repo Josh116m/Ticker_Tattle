@@ -4,4 +4,7 @@ nbsi_phase0/.venv/
 # Python cache
 __pycache__/
 *.pyc
+# Local secrets (do not commit)
+nbsi/phase1/configs/secrets.yaml
+
 

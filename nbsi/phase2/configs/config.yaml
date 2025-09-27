@@ -1,0 +1,79 @@
+# NBElastic Phase-2 Configuration
+# ETL → Panel Builders with rate limits and business rules
+
+# Data windows
+lookback:
+  build_days: 60  # ET trading days for full build
+  diagnostic_days: 14  # ET trading days for Phase-0 alignment
+
+# Universe
+universe:
+  sectors:
+    - XLK  # Technology
+    - XLF  # Financial
+    - XLY  # Consumer Discretionary
+    - XLV  # Health Care
+    - XLE  # Energy
+    - XLB  # Materials
+    - XLI  # Industrial
+    - XLU  # Utilities
+    - XLRE # Real Estate
+    - XLC  # Communication Services
+    - XLP  # Consumer Staples
+  spy_proxy: SPY
+
+# News processing thresholds (frozen from Phase-0)
+news_thresholds:
+  coverage_buckets:
+    high: 3      # n_articles >= 3 → weight 1.0
+    medium: 2    # n_articles == 2 → weight 0.7
+    low: 1       # n_articles == 1 → weight 0.4
+    zero: 0      # n_articles == 0 → weight 0.9 × yesterday, hard zero after 2 consecutive
+  
+# SPY proxy rules
+spy_proxy:
+  primary_method: "all_news_weighted"  # All news weighted by SPY top-50 constituents
+  fallback_threshold: 8  # Use SPY-tagged only if primary < 8 articles
+  fallback_method: "spy_tagged_only"
+
+# Rate limiting (Finnhub ≤30/s ceiling)
+finnhub_rate_limit:
+  max_per_second: 25      # Target steady-state below 30/s ceiling
+  bucket_capacity: 30
+  backoff_base_seconds: 0.5
+  backoff_factor: 2.0
+  backoff_max_seconds: 60
+  log_rate_every_secs: 1
+  honor_retry_after: true
+
+# Polygon news settings
+polygon_news:
+  use_bearer_auth: true    # Authorization header, not URL param
+  follow_next_url: true    # Use absolute next_url from response
+  page_limit: 1000         # High limit to reduce page count
+
+# Embargo rules
+embargo:
+  cutoff_time_et: "15:55"  # Articles after 15:55 ET → next trading day
+  signal_compute_time_et: "15:15"  # Signals computed at 15:15 ET
+
+# Feature engineering
+features:
+  sentiment:
+    model: "ProsusAI/finbert"  # FinBERT for finance polarity
+    use_gpu: true
+    confidence_threshold: 0.1
+  
+  relevance:
+    model: "sentence-transformers/all-MiniLM-L6-v2"
+    max_tokens: 256
+    use_gpu: true
+    
+  panel:
+    recency_half_life_hours: 24  # t½ = 24h decay
+    extreme_polarity_threshold: 0.5  # |polarity| > 0.5 considered extreme
+
+# Alpaca execution (for Phase-4)
+alpaca:
+  time_in_force: "opg"  # Market-on-open for next trading session
+  routing: "next_open_only"  # 100% next-open routing assumption
