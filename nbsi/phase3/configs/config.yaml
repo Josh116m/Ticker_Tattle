@@ -1,0 +1,41 @@
+lookback_trading_days: 252
+signal_cutoff_et: "15:15"
+embargo_minutes: 60
+rebalance_cadence_days: 2
+rank_breadth: {long: 3, short: 3}
+risk_limits:
+  per_sector_cap: 0.30   # max absolute weight per sector
+  gross_cap: 1.50        # max gross leverage
+  daily_stop: 0.05       # flatten if daily loss exceeds 5%
+execution:
+  next_open: true        # Alpaca OPG assumption
+rl:
+  finnhub:
+    bucket_capacity: 30
+    refill_per_second: 25
+    honor_retry_after: true
+  polygon:
+    header_auth: true
+    follow_next_url: true
+universe:
+  sectors: [XLB, XLC, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY]
+  spy: SPY
+features:
+  use_columns: [mean_polarity, conf_mean, rel_weight_sum, pct_extreme, stale_share, std_polarity, rv20, rv60]
+  cost_columns: [stale_share, std_polarity, rv20, rv60]  # treated as costs in TOPSIS (lower is better)
+plots:
+  rolling_sharpe_window: 63
+fees:
+  bps_per_trade: 1
+prices:
+  source: polygon
+  adjusted: true
+  tz: ET
+
+
+mcda:
+  input_norm: [rank, minmax, zscore]   # A/B normalization
+  drop_zero_dispersion: true            # per-day guard
+  max_weight_cap: 0.5                   # per-day cap
+  shrink_equal_lambda: 0.20             # small shrink toward equal weights (0 disables)
+  weighting: [entropy, critic]          # A/B weighting methods
