@@ -8,3 +8,11 @@ __pycache__/
 nbsi/phase1/configs/secrets.yaml
 
 
+
+# build artifacts
+artifacts/
+**/*.parquet
+**/*.log
+**/__pycache__/
+nbsi/phase1/configs/secrets.yaml
+scripts/tmp*
