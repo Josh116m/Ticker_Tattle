@@ -2,6 +2,14 @@
 nbsi/phase0/.venv/
 nbsi_phase0/.venv/
 # Python cache
+# Global virtualenv ignores
+**/.venv/
+.venv/
+venv/
+# Environment files
+.env
+.env.*
+
 __pycache__/
 *.pyc
 # Local secrets (do not commit)
