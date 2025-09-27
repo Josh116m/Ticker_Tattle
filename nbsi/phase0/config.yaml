@@ -1,0 +1,53 @@
+# Legacy format for compatibility with existing script
+polygon_api_key: "NAElgPyaDwyzJiJE50jHPdEwXopQJuh9"
+finnhub_api_key: "d2aj86hr01qgk9uf6kcgd2aj86hr01qgk9uf6kd0"
+
+polygon:
+  api_key: "NAElgPyaDwyzJiJE50jHPdEwXopQJuh9"
+
+polygon_s3:
+  enabled: true
+  endpoint_url: "https://files.polygon.io"
+  bucket: "flatfiles"
+  access_key_id: "89476d33-0f4d-42de-82f5-e029e1fe208d"
+  secret_access_key: "NAElgPyaDwyzJiJE50jHPdEwXopQJuh9"
+
+finnhub:
+  api_key: "d2aj86hr01qgk9uf6kcgd2aj86hr01qgk9uf6kd0"
+
+finnhub_rate_limit:
+  max_per_second: 25
+  bucket_capacity: 30
+  backoff_base_seconds: 0.5
+  backoff_factor: 2.0
+  backoff_max_seconds: 60
+
+alpaca:
+  paper_endpoint: "https://paper-api.alpaca.markets/v2"
+  key_id: "PKBNPDT94XCJ6WWO1R8H"
+  secret_key: "59B2xh9E3uqLTqYLMrYAA3foB70v2vuBAGfJcfWq"
+
+run:
+  # Today is 2025-09-27 (America/Chicago). We need the last 14 **trading** days in ET.
+  lookback_trading_days: 14
+  timezone_et: "America/New_York"
+  timezone_ct: "America/Chicago"
+  output_dir: "artifacts"         # agent should create it if missing
+
+universe:
+  sectors: ["XLY","XLF","XLK","XLV","XLE","XLB","XLI","XLU","XLRE","XLC","XLP"]
+  spy_ticker: "SPY"
+  # Used for sanity checks and SPY sentiment proxy weighting
+  spy_top50_mode: "weighted_all_news"
+  spy_fallback_min_items: 8       # auto-switch to SPY-tagged only if < 8/day
+
+thresholds:
+  coverage_pass_pct_days: 70      # ≥3 articles for ≥10/11 sectors on ≥70% of days
+  coverage_floor_articles: 3
+  top_source_cap: 0.60
+  staleness_hours: 12
+  staleness_cap: 0.50
+  near_dup_max_retained: 0.15
+  spy_proxy_min_primary: 10
+  spy_proxy_corr_abs_min: 0.10
+  rv20_gate_percent: 25

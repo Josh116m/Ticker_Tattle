@@ -1,0 +1,13 @@
+finnhub_rate_limit:
+  max_per_second: 25
+  bucket_capacity: 30
+  backoff_base_seconds: 0.5
+  backoff_factor: 2.0
+  backoff_max_seconds: 60
+
+polygon:
+  base_url: https://api.polygon.io
+
+alpaca:
+  paper_endpoint: https://paper-api.alpaca.markets/v2
+

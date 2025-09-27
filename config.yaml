@@ -1,0 +1,33 @@
+### NBSI Phase 0 configuration
+#
+# This YAML file contains the credentials and configuration options
+# required to run the phase‑0 diagnostic for the NBElastic project.
+# The diagnostic pulls news and market data from Polygon.io and
+# earnings information from Finnhub.  These values should be
+# overridden by environment variables or secret management systems
+# in production; they are provided here for convenience in the
+# research environment.
+
+polygon_api_key: "NAElgPyaDwyzJiJE50jHPdEwXopQJuh9"
+finnhub_api_key: "d2aj86hr01qgk9uf6kcgd2aj86hr01qgk9uf6kd0"
+
+# Alpaca keys are not required for phase‑0, but they are kept here for
+# completeness.  They will be used during later stages of the pipeline.
+alpaca:
+  endpoint: "https://paper-api.alpaca.markets"
+  key: "PKBNPDT94XCJ6WWO1R8H"
+  secret: "59B2xh9E3uqLTqYLMrYAA3foB70v2vuBAGfJcfWq"
+
+# News fetching parameters
+news:
+  lookback_days: 20  # Pull slightly more than 14 days to allow for holiday skips
+  per_page: 100      # Maximum number of items per API call
+
+# Price fetching parameters
+prices:
+  lookback_days: 90  # Fetch enough history for 60‑day and 20‑day vol calculations
+
+# SPY proxy configuration
+spy:
+  top_n: 50  # Number of top SPY constituents to weight for sentiment proxy
+  min_articles: 8  # Fallback to SPY‑tagged only if fewer items per day

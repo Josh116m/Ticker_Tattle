@@ -1,0 +1,7 @@
+# Ignore local virtualenvs
+nbsi/phase0/.venv/
+nbsi_phase0/.venv/
+# Python cache
+__pycache__/
+*.pyc
+
