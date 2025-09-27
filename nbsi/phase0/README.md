@@ -54,3 +54,13 @@ weeks, compute the metrics, and write the following outputs into
 If the diagnostic fails any of the threshold checks, consult the
 summary for suggested fallback actions.  Otherwise, you can proceed
 to the next phases of the NBElastic build.
+
+
+## Freeze summary (nbelastic-v1.2-phase0)
+
+- Lookback window (ET): 2025-09-09 → 2025-09-26
+- SPY fallback usage: 0 days (used_fallback=False for all days)
+- Near-duplicate rates (daily aggregate) range: 0.00% → 23.40%
+- RV proxy columns present in price health: rv20 and rv60
+
+See nbsi_phase0/artifacts/ for CSVs and the detailed phase0_summary.md; commit tagged as nbelastic-v1.2-phase0.
