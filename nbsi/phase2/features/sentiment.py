@@ -11,7 +11,7 @@ def run_finbert(df_clean: pd.DataFrame, text_col: str = 'title', use_gpu: bool =
     from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
     model_name = 'ProsusAI/finbert'
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSequenceClassification.from_pretrained(model_name)
+    model = AutoModelForSequenceClassification.from_pretrained(model_name, use_safetensors=True)
     pipe = pipeline('text-classification', model=model, tokenizer=tokenizer, device=0 if use_gpu else -1, truncation=True)
 
     texts = (df_clean[text_col].fillna('') + ' ' + df_clean['description'].fillna('')).str.strip().tolist()
