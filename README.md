@@ -54,3 +54,48 @@ weeks, compute the metrics, and write the following outputs into
 If the diagnostic fails any of the threshold checks, consult the
 summary for suggested fallback actions.  Otherwise, you can proceed
 to the next phases of the NBElastic build.
+
+
+## Phase-5 — Reporting
+
+Generates a daily equity report and chart from Phase-4 outputs, with an optional SPY overlay.
+
+**Inputs (from Phase-4)**
+- `artifacts/phase4/pnl_by_day.parquet` — must include `date_et` + one of `ret`/`pnl`/`portfolio_ret`/`daily_ret`
+- `artifacts/phase4/fills.parquet`
+- *(optional)* `artifacts/phase4/exec_summary.json` — used for exposure stats (`avg_gross`, `stop_days`)
+
+**Optional inputs (for SPY overlay)**
+- `artifacts/phase3/opens.parquet`, `artifacts/phase3/closes.parquet` — SPY open→close overlay (dashed). If missing, the script logs a QA note and proceeds.
+
+**Outputs**
+- `artifacts/phase5/daily_equity.csv` — columns: `date_et, ret, equity`
+- `artifacts/phase5/equity_curve.png` — strategy curve (+ dashed SPY overlay when available)
+- `artifacts/phase5/daily_report.md` — days, final equity, exposure stats, last-5-days fills-by-ticker table, QA notes
+- `artifacts/phase5/qa_phase5.log` — “QA PASS …” + overlay status notes
+
+**Run**
+````bash
+python nbsi/phase5/scripts/run_phase5.py \
+  --from artifacts/phase4 \
+  --out  artifacts/phase5 \
+  --phase3-root artifacts/phase3   # optional, for SPY overlay
+````
+
+**Example CLI output**
+
+```
+PHASE 5 REPORT COMPLETE
+```
+
+**Notes**
+
+- SPY overlay is best-effort; if pivots are absent or dates don’t overlap, the report is still produced and a QA note explains why the overlay was skipped.
+- Exposure stats are pulled from `exec_summary.json` when present (avg gross, stop days).
+- Last-5-days fills snapshot is derived from `fills.parquet`.
+
+**Tests (no network/secrets)**
+
+````bash
+python -m unittest nbsi.phase5.tests.test_phase5_smoke -v
+````
