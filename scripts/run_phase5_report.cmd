@@ -23,5 +23,9 @@ if exist "%REPO%\scripts\rotate_log.cmd" call "%REPO%\scripts\rotate_log.cmd" "%
 
 python nbsi\phase5\scripts\run_phase5.py --from "%PHASE4%" --out "%OUT%" --phase3-root "%PHASE3%"
 
+REM Optional: webhook notify (only runs if WEBHOOK_URL is set in user env)
+python nbsi\phase5\scripts\post_webhook.py
+
+
 exit /b %ERRORLEVEL%
 
