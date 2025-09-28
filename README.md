@@ -127,3 +127,38 @@ python -m unittest nbsi.phase5.tests.test_phase5_smoke -v
 **Manual runs & log locations**
 - Manual run: `scripts\run_phase5_report.cmd`
 - Logs: `artifacts\phase5\qa_phase5.log` (plus rotated `.1`–`.7`)
+
+
+## Phase-4 — Routing Runbook
+
+**Dry preview (safe, no network):**
+````bash
+python nbsi/phase4/scripts/run_phase4.py --mode route --dry-run true --from artifacts/phase3 --emit-csv true
+````
+
+Outputs:
+
+- artifacts/phase4/orders_intents.parquet (+ optional orders_intents.csv)
+- artifacts/phase4/orders_preview.parquet
+- QA log tail includes a run banner and `provenance: host=... user=...`.
+
+**Paper submission (Alpaca sandbox)**
+Guarded: requires env creds and explicit confirm gate.
+
+````bash
+set ALPACA_KEY_ID=...        # or persist via User env
+set ALPACA_SECRET_KEY=...
+python nbsi/phase4/scripts/run_phase4.py --mode route --dry-run false --confirm "I UNDERSTAND" --from artifacts/phase3
+````
+
+Outputs:
+
+- artifacts/phase4/orders_submitted.parquet (status_code per order)
+- QA log line: `[route] SUBMITTED rows=... -> ...orders_submitted.parquet`
+- End message: `PHASE 4 ROUTE (SUBMITTED) COMPLETE`
+
+**Notes**
+
+- Business rules remain frozen (v1.2): 2-day hold, 3L/3S, sector ≤30%, gross ≤150%, 5% daily stop, OPG timing.
+- `NBSI_OUT_ROOT` is honored by all scripts if set.
+- For safety, the submit path refuses without `--confirm "I UNDERSTAND"` and valid env creds.
