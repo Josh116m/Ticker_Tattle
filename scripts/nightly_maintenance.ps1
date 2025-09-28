@@ -74,9 +74,14 @@ if ($missing.Count -gt 0) {
 
 # Optional: warn if QA PASS not visible
 try {
-  $p5_tail = Get-Content 'artifacts/phase5/qa_phase5.log' -Tail 50 -ErrorAction Stop
-  if ($p5_tail -notmatch 'QA PASS') { Write-Warning 'QA PASS not detected in Phase-5 tail; inspect logs above.' }
-} catch { Write-Warning 'Phase-5 log not found for PASS check.' }
+  $p5_tail = Get-Content 'artifacts/phase5/qa_phase5.log' -Tail 200 -ErrorAction Stop
+  $tailText = ($p5_tail -join "`n")
+  if (-not ($tailText -match 'QA PASS')) {
+    Write-Warning 'QA PASS not detected in Phase-5 tail; inspect logs above.'
+  }
+} catch {
+  Write-Warning 'Phase-5 log not found for PASS check.'
+}
 
 Write-Host 'Nightly maintenance complete.'
 exit 0
