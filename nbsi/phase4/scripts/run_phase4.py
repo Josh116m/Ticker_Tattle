@@ -121,6 +121,7 @@ def main_route(args) -> None:
     intents.to_parquet(intents_path, index=False)
 
     qa_path = os.path.join(out_dir, "qa_phase4.log")
+    # Optional CSV emission for quick eyeballing
     emit_csv = str(getattr(args, "emit_csv", "false")).lower() in {"1","true","yes","y"}
     if emit_csv:
         csv_path = os.path.join(out_dir, "orders_intents.csv")
@@ -131,6 +132,7 @@ def main_route(args) -> None:
         with open(qa_path, "a", encoding="utf-8") as f:
             f.write(f"[route] parquet only: {os.path.relpath(intents_path)} rows={len(intents)}\n")
 
+    # Keep legacy pass line for continuity
     with open(qa_path, "a", encoding="utf-8") as f:
         f.write(f"ROUTING DRY PASS: wrote {len(intents)} intents to {intents_path}\n")
 
