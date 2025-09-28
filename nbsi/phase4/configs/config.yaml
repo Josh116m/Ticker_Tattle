@@ -1,0 +1,36 @@
+# Phase-4 execution sim and paper routing config (v1.2 rules frozen)
+# - Execution: 100% next-open via Alpaca OPG
+# - Holdings cadence: strict 2-day; portfolio: 3L/3S
+# - Risk caps: 30% per-sector, 150% gross, 5% daily stop
+# - CT=ET-1 alignment; signals stamped ~15:15 ET; orders queued for next open
+
+inputs:
+  # Prefer Phase-3 winner artifacts
+  base_dir: artifacts/phase3
+  positions_path: null  # e.g., artifacts/phase3/rank_entropy/positions.parquet
+  sector_panel_path: null
+  phase0_price_health: artifacts/phase0/price_health.parquet
+
+broker:
+  name: alpaca
+  paper: true
+  # Keys are read from env: ALPACA_KEY_ID / ALPACA_SECRET_KEY first, then secrets.yaml fallback
+  endpoint: https://paper-api.alpaca.markets
+
+safety:
+  dry_run: true
+  max_order_notional_per_symbol: 10000.0
+  global_kill_switch: false
+
+risk_caps:
+  per_sector: 0.30
+  gross: 1.50
+  daily_stop: 0.05
+
+outputs:
+  base_dir: artifacts/phase4
+  fills: artifacts/phase4/fills.parquet
+  pnl_by_day: artifacts/phase4/pnl_by_day.parquet
+  exec_summary: artifacts/phase4/exec_summary.json
+  qa_log: artifacts/phase4/qa_phase4.log
+
