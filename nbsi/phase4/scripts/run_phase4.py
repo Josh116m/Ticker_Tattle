@@ -19,6 +19,7 @@ if str(REPO_ROOT) not in sys.path:
 
 import pandas as pd  # type: ignore
 from nbsi.phase4.exec.simulator import ExecConfig, build_daily_positions, simulate_opg
+from nbsi.phase4.route.router import build_opg_intents
 
 
 def load_config(cfg_path: Path) -> Dict[str, Any]:
@@ -92,6 +93,37 @@ def main_simulate(args) -> None:
     print("PHASE 4 SIM COMPLETE")
 
 
+def main_route(args) -> None:
+    out_dir = "artifacts/phase4"
+    pos_path = os.path.join(out_dir, "positions_effective.parquet")
+    if not os.path.exists(pos_path):
+        raise FileNotFoundError(
+            f"positions_effective.parquet not found at {pos_path}. Run simulate first."
+        )
+
+    positions_eff = pd.read_parquet(pos_path)
+    positions_eff.index = pd.to_datetime(positions_eff.index)
+
+    universe = ("XLB","XLC","XLE","XLF","XLI","XLK","XLP","XLRE","XLU","XLV","XLY")
+    sectors = {t: t for t in universe}
+
+    intents = build_opg_intents(
+        positions_effective=positions_eff[positions_eff.columns.intersection(universe)],
+        sectors=sectors,
+        gross_cap=1.50,
+        sector_cap=0.30,
+        tif="opg",
+    )
+
+    intents_path = os.path.join(out_dir, "orders_intents.parquet")
+    intents.to_parquet(intents_path)
+
+    with open(os.path.join(out_dir, "qa_phase4.log"), "a", encoding="utf-8") as f:
+        f.write(f"ROUTING DRY PASS: wrote {len(intents)} intents to {intents_path}\n")
+
+    print("PHASE 4 ROUTE (DRY) COMPLETE")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", choices=["simulate", "route"], required=True)
@@ -103,7 +135,7 @@ def main() -> None:
     if args.mode == "simulate":
         main_simulate(args)
     else:
-        print("PHASE 4 ROUTE (DRY) COMPLETE")
+        main_route(args)
 
 
 if __name__ == "__main__":
