@@ -102,3 +102,28 @@ PHASE 5 REPORT COMPLETE
 ````bash
 python -m unittest nbsi.phase5.tests.test_phase5_smoke -v
 ````
+
+
+## Troubleshooting — Phase-5 scheduled report (Windows)
+
+**Where it runs**
+- Task name: `NBElastic Phase5 Report`
+- Command: `cmd.exe /c "D:\Ticker Tattle\scripts\run_phase5_report.cmd"`
+- Start in: `D:\Ticker Tattle`
+
+**Common issues / fixes**
+- Script runs manually but not via Scheduler:
+  - Set “Start in (optional)” to the repo root.
+  - Configure “Run whether user is logged on or not.”
+  - Ensure the user has read/write permissions to `artifacts\phase4` and `artifacts\phase5`.
+- No new outputs / stale PNG:
+  - Check `artifacts\phase5\qa_phase5.log` (logs are rotated: `qa_phase5.log`, `.1` … `.7`).
+  - Verify `python` on PATH matches the interpreter with `pandas/pyarrow/matplotlib`.
+- Exit code ≠ 0:
+  - Run: `scripts\run_phase5_report.cmd` in a terminal to see the full traceback.
+  - Make sure Phase-4 outputs exist: `artifacts\phase4\pnl_by_day.parquet`, `artifacts\phase4\fills.parquet`.
+  - Optional SPY overlay: ensure Phase-3 pivots exist: `artifacts\phase3\opens.parquet`, `closes.parquet`.
+
+**Manual runs & log locations**
+- Manual run: `scripts\run_phase5_report.cmd`
+- Logs: `artifacts\phase5\qa_phase5.log` (plus rotated `.1`–`.7`)
