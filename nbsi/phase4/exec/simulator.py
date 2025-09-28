@@ -1,84 +1,139 @@
-"""
-Phase-4 execution simulator (OPG) — scaffolding.
-- Simulates next-open fills at t+1 open given signals at t.
-- Enforces v1.2 invariants by interface (no business-rule changes implemented here).
-
-This initial scaffold creates placeholder artifacts so downstream QA/plumbing can run end-to-end.
-"""
 from __future__ import annotations
-import json
-import os
-from pathlib import Path
-from typing import Optional, Dict, Any
+import math
+from dataclasses import dataclass
+from typing import Dict, List, Tuple
+import pandas as pd
+import numpy as np
 
 
-def ensure_dir(p: Path) -> None:
-    p.mkdir(parents=True, exist_ok=True)
+@dataclass(frozen=True)
+class ExecConfig:
+    long_count: int = 3
+    short_count: int = 3
+    sector_cap: float = 0.30       # 30% per sector
+    gross_cap: float = 1.50        # 150% gross
+    daily_stop: float = 0.05       # 5% daily stop (risk gate)
+    min_hold_days: int = 2         # strict 2-day cadence
+    universe: Tuple[str, ...] = ("XLB","XLC","XLE","XLF","XLI","XLK","XLP","XLRE","XLU","XLV","XLY")
 
 
-def write_text(path: Path, text: str) -> None:
-    ensure_dir(path.parent)
-    path.write_text(text, encoding="utf-8")
+def _normalize_index_to_et_naive(df: pd.DataFrame) -> pd.DataFrame:
+    if not isinstance(df.index, pd.DatetimeIndex):
+        raise ValueError("DataFrame index must be DatetimeIndex")
+    if df.index.tz is not None:
+        df = df.copy()
+        df.index = df.index.tz_convert("America/New_York").tz_localize(None)
+    return df
 
 
-def write_json(path: Path, data: Dict[str, Any]) -> None:
-    ensure_dir(path.parent)
-    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+def build_daily_positions(
+    scores: pd.DataFrame,        # index=date_et, columns tickers, values cross-sec score (higher better)
+    sectors: Dict[str, str],     # ticker -> sector code (XLB...XLY)
+    cfg: ExecConfig,
+) -> pd.DataFrame:
+    """Form daily target positions (weights) with strict 2-day cadence and caps."""
+    scores = _normalize_index_to_et_naive(scores).sort_index()
+    dates = scores.index.unique()
 
+    pos = pd.DataFrame(0.0, index=dates, columns=cfg.universe)
+    hold_age = {t: 0 for t in cfg.universe}
 
-def write_parquet_placeholder(path: Path) -> None:
-    """
-    Creates a tiny placeholder parquet-like artifact. If pandas/pyarrow is available, write a real parquet
-    with zero rows; otherwise, write a CSV with .parquet extension as a placeholder to keep scaffolding unblocked.
-    """
-    ensure_dir(path.parent)
-    try:
-        import pandas as pd  # type: ignore
-        df = pd.DataFrame([], columns=["date", "symbol", "side", "qty", "price"])  # minimal schema
-        df.to_parquet(path, index=False)
-    except Exception:
-        # Fallback: clearly mark placeholder content
-        path.write_text("placeholder, no rows", encoding="utf-8")
+    for i, d in enumerate(dates):
+        row = scores.loc[d].dropna()
+        # Pick 3L/3S from available universe
+        row = row[row.index.isin(cfg.universe)].sort_values(ascending=False)
+        longs = list(row.index[:cfg.long_count])
+        shorts = list(row.index[-cfg.short_count:])
+
+        # Respect min hold: if we are mid-hold, keep existing sign; otherwise allow switch
+        if i > 0:
+            prev = pos.iloc[i-1].copy()
+            # naive sign logic: keep if hold_age < min_hold_days
+            for t in cfg.universe:
+                if hold_age[t] < cfg.min_hold_days and prev[t] != 0.0:
+                    sign = np.sign(prev[t])
+                    pos.iloc[i][t] = sign  # keep sign; magnitude normalized later
+                else:
+                    pos.iloc[i][t] = 0.0
+
+        # If not locked by hold, assign new picks for today (signs only)
+        for t in longs:
+            if pos.iloc[i][t] == 0.0:
+                pos.iloc[i][t] = +1.0
+        for t in shorts:
+            if pos.iloc[i][t] == 0.0:
+                pos.iloc[i][t] = -1.0
+
+        # Enforce sector and gross caps by scaling
+        w = pos.iloc[i].copy()
+
+        # Sector cap: L1 within each sector bucket
+        ser = pd.Series({t: sectors.get(t, "UNK") for t in cfg.universe})
+        for s in ser.unique():
+            tickers = ser[ser == s].index
+            gross_s = w.loc[tickers].abs().sum()
+            if gross_s > 0:
+                scale = min(1.0, cfg.sector_cap / gross_s)
+                if scale < 1.0:
+                    w.loc[tickers] *= scale
+
+        # Gross cap
+        gross = w.abs().sum()
+        if gross > 0:
+            w *= min(1.0, cfg.gross_cap / gross)
+
+        pos.iloc[i] = w
+
+        # Update hold ages
+        if i == 0:
+            hold_age = {t: (1 if w[t] != 0 else 0) for t in cfg.universe}
+        else:
+            for t in cfg.universe:
+                hold_age[t] = (hold_age[t] + 1) if w[t] == pos.iloc[i-1][t] and w[t] != 0 else (1 if w[t] != 0 else 0)
+
+    return pos.astype(float)
 
 
 def simulate_opg(
-    out_dir: Path,
-    outputs: Dict[str, str],
-    config: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    positions: pd.DataFrame,     # index=date_et (signal date), weights for *next-day* OPG entry
+    opens: pd.DataFrame,         # index=date_et, columns=tickers, ET-naive; use t+1 open
+    closes: pd.DataFrame,        # index=date_et, columns=tickers, ET-naive; use t+1 close
+    cfg: ExecConfig,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
-    Minimal simulation stub. Produces required artifacts and a summary.
+    Execute 100% next-open: positions at day t are filled at day t+1 open and
+    P&L realized over t+1 open -> t+1 close. Apply daily stop as a risk gate that flattens.
+    Returns: fills (weights @ open), pnl_by_day, positions_effective.
     """
-    out_dir = Path(out_dir)
-    ensure_dir(out_dir)
+    positions = _normalize_index_to_et_naive(positions).sort_index()
+    opens = _normalize_index_to_et_naive(opens).sort_index()
+    closes = _normalize_index_to_et_naive(closes).sort_index()
 
-    fills_path = Path(outputs.get("fills", out_dir / "fills.parquet"))
-    pnl_path = Path(outputs.get("pnl_by_day", out_dir / "pnl_by_day.parquet"))
-    summary_path = Path(outputs.get("exec_summary", out_dir / "exec_summary.json"))
+    # Shift positions to align with next-day prices
+    # positions on t become fills on t+1
+    positions_eff = positions.shift(1).reindex(opens.index).fillna(0.0)
 
-    write_parquet_placeholder(fills_path)
-    write_parquet_placeholder(pnl_path)
-    summary = {
-        "mode": "simulate",
-        "assumptions": {
-            "opg": True,
-            "two_day_hold": True,
-            "portfolio": "3L/3S",
-            "caps": {"per_sector": 0.30, "gross": 1.50, "daily_stop": 0.05},
+    # Compute returns (t+1 open -> t+1 close)
+    rets = (closes / opens) - 1.0
+    rets = rets.reindex_like(opens)
+
+    # Daily portfolio return before stop
+    port_ret_raw = (positions_eff * rets).sum(axis=1)
+
+    # Risk gate: if daily loss <= -daily_stop, flatten for that day’s close (set PnL = -stop)
+    port_ret = port_ret_raw.copy()
+    stop_mask = port_ret < -cfg.daily_stop
+    port_ret[stop_mask] = -cfg.daily_stop
+
+    pnl = pd.DataFrame(
+        {
+            "ret_raw": port_ret_raw,
+            "ret_after_stop": port_ret,
+            "stopped": stop_mask.astype(int),
+            "gross_exposure": positions_eff.abs().sum(axis=1),
         },
-        "notes": "Phase-4 scaffold — replace with full simulator logic.",
-    }
-    write_json(summary_path, summary)
-    return summary
+        index=opens.index,
+    )
 
-
-if __name__ == "__main__":
-    # Manual smoke: create placeholders under artifacts/phase4
-    outputs = {
-        "fills": "artifacts/phase4/fills.parquet",
-        "pnl_by_day": "artifacts/phase4/pnl_by_day.parquet",
-        "exec_summary": "artifacts/phase4/exec_summary.json",
-    }
-    sim_summary = simulate_opg(Path("artifacts/phase4"), outputs)
-    print("Sim summary:", sim_summary)
-
+    fills = positions_eff.copy()  # weights at open
+    return fills, pnl, positions_eff
