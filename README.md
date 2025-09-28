@@ -173,6 +173,7 @@ Outputs:
 - Pre-commit: `pip install pre-commit` → `pre-commit install` → `pre-commit run --all-files` for local ruff/black checks (CI unchanged).
 
 
+
 ## Owner notes (ops policy)
 
 **Required status check**
@@ -261,3 +262,4 @@ git checkout main && git pull
 git tag -a nbelastic-v1.2.2 -m "Phase-4/5 update <short note>"  # do NOT move old tags
 git push origin nbelastic-v1.2.2
 ```
+
