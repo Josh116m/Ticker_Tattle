@@ -136,6 +136,27 @@ def main_route(args) -> None:
     with open(qa_path, "a", encoding="utf-8") as f:
         f.write(f"ROUTING DRY PASS: wrote {len(intents)} intents to {intents_path}\n")
 
+    # Paper broker preview/submission
+    dry = str(getattr(args, "dry_run", "true")).lower() in {"1","true","yes","y"}
+    if dry:
+        from nbsi.phase4.route.alpaca_paper import preview_submissions
+        prev = preview_submissions(intents)
+        prev_path = os.path.join(out_dir, "orders_preview.parquet")
+        prev.to_parquet(prev_path, index=False)
+        with open(qa_path, "a", encoding="utf-8") as f:
+            f.write(f"[route] DRY preview rows={len(prev)} -> {os.path.relpath(prev_path)}\n")
+    else:
+        confirm = str(getattr(args, "confirm", ""))
+        if confirm != "I UNDERSTAND":
+            raise SystemExit("Refusing to submit: pass --confirm \"I UNDERSTAND\" to proceed.")
+        from nbsi.phase4.route.alpaca_paper import AlpacaCfg, submit_opg_orders
+        cfg = AlpacaCfg()
+        submitted = submit_opg_orders(intents, cfg)
+        sub_path = os.path.join(out_dir, "orders_submitted.parquet")
+        submitted.to_parquet(sub_path, index=False)
+        with open(qa_path, "a", encoding="utf-8") as f:
+            f.write(f"[route] SUBMITTED rows={len(submitted)} -> {os.path.relpath(sub_path)}\n")
+
     print("PHASE 4 ROUTE (DRY) COMPLETE")
 
 
@@ -147,6 +168,8 @@ def main() -> None:
     ap.add_argument("--config", default="nbsi/phase4/configs/config.yaml")
     ap.add_argument("--emit-csv", default="false",
                     help="Also write orders_intents.csv beside parquet (true/false). Default false.")
+    ap.add_argument("--confirm", default="",
+                    help="Safety gate: required literal 'I UNDERSTAND' when --dry-run false.")
     args = ap.parse_args()
 
     if args.mode == "simulate":
