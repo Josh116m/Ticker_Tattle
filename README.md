@@ -165,3 +165,9 @@ Outputs:
 
 
 **Start In (Task Scheduler):** set to `D:\Ticker Tattle` to avoid relative-path issues when the job runs headless.
+
+
+
+## Developer notes (optional)
+- Webhook: set a WEBHOOK_URL user env var to post a one-line Phase-5 summary after each report; if unset, it quietly skips. Install `requests` if you use it.
+- Pre-commit: `pip install pre-commit` → `pre-commit install` → `pre-commit run --all-files` for local ruff/black checks (CI unchanged).
