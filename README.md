@@ -1,3 +1,6 @@
+![nbsi tests](https://github.com/Josh116m/Ticker_Tattle/actions/workflows/nbsi-tests.yml/badge.svg)
+
+
 # NBElastic Phase‑0 Diagnostic
 
 This folder contains a self‑contained implementation of the Phase‑0
