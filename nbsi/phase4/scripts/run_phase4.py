@@ -90,9 +90,15 @@ def main_simulate(args) -> None:
         json.dump(summary, f, indent=2)
 
     qa = os.path.join(out_dir, "qa_phase4.log")
-    with open(qa, "w", encoding="utf-8") as f:
+    # --- run banner + provenance (parity with route path) ---
+    with open(qa, "a", encoding="utf-8") as f:
+        f.write(f"--- run {datetime.now().isoformat(timespec='seconds')} ---\n")
+        f.write(f"provenance: host={platform.node()} user={getpass.getuser()}\n")
+    # QA summary and completion line
+    with open(qa, "a", encoding="utf-8") as f:
         f.write("QA PASS: positions aligned t->t+1, caps applied, stop applied\n")
         f.write(repr(summary) + "\n")
+        f.write("PHASE 4 SIM COMPLETE\n")
 
     print("PHASE 4 SIM COMPLETE")
 
