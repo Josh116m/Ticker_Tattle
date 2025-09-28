@@ -202,6 +202,15 @@ Outputs:
 
 ## Ops cheat-sheet
 
+Nightly maintenance script: `scripts/nightly_maintenance.ps1`
+
+Run manually:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\nightly_maintenance.ps1
+```
+
+
 # Day-to-day
 
 **Dry route + report (safe, offline)**
