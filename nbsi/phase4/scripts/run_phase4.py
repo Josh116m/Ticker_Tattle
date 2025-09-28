@@ -51,7 +51,8 @@ def _load_prices(p3_path: str) -> tuple[pd.DataFrame, pd.DataFrame]:
 
 def main_simulate(args) -> None:
     base = args.from_path or "artifacts/phase3"
-    out_dir = "artifacts/phase4"
+    out_root = os.getenv("NBSI_OUT_ROOT", "")
+    out_dir = os.path.join(out_root, "artifacts", "phase4") if out_root else os.path.join("artifacts", "phase4")
     os.makedirs(out_dir, exist_ok=True)
 
     scores = _load_scores(os.path.join("artifacts", "phase2"))
@@ -94,7 +95,8 @@ def main_simulate(args) -> None:
 
 
 def main_route(args) -> None:
-    out_dir = "artifacts/phase4"
+    out_root = os.getenv("NBSI_OUT_ROOT", "")
+    out_dir = os.path.join(out_root, "artifacts", "phase4") if out_root else os.path.join("artifacts", "phase4")
     pos_path = os.path.join(out_dir, "positions_effective.parquet")
     if not os.path.exists(pos_path):
         raise FileNotFoundError(
@@ -118,9 +120,9 @@ def main_route(args) -> None:
     intents_path = os.path.join(out_dir, "orders_intents.parquet")
     intents.to_parquet(intents_path, index=False)
 
+    qa_path = os.path.join(out_dir, "qa_phase4.log")
     # Optional CSV emission for quick eyeballing
     emit_csv = str(getattr(args, "emit_csv", "false")).lower() in {"1","true","yes","y"}
-    qa_path = os.path.join(out_dir, "qa_phase4.log")
     if emit_csv:
         csv_path = os.path.join(out_dir, "orders_intents.csv")
         intents.to_csv(csv_path, index=False)
@@ -129,7 +131,6 @@ def main_route(args) -> None:
     else:
         with open(qa_path, "a", encoding="utf-8") as f:
             f.write(f"[route] parquet only: {os.path.relpath(intents_path)} rows={len(intents)}\n")
-
 
     # Keep legacy pass line for continuity
     with open(qa_path, "a", encoding="utf-8") as f:
