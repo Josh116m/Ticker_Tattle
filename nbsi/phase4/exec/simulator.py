@@ -39,6 +39,9 @@ def build_daily_positions(
     hold_age = {t: 0 for t in cfg.universe}
 
     for i, d in enumerate(dates):
+        # reset row explicitly to avoid chained assignment
+        pos.iloc[i, :] = 0.0
+
         row = scores.loc[d].dropna()
         # Pick 3L/3S from available universe
         row = row[row.index.isin(cfg.universe)].sort_values(ascending=False)
@@ -48,24 +51,20 @@ def build_daily_positions(
         # Respect min hold: if we are mid-hold, keep existing sign; otherwise allow switch
         if i > 0:
             prev = pos.iloc[i-1].copy()
-            # naive sign logic: keep if hold_age < min_hold_days
             for t in cfg.universe:
                 if hold_age[t] < cfg.min_hold_days and prev[t] != 0.0:
-                    sign = np.sign(prev[t])
-                    pos.iloc[i][t] = sign  # keep sign; magnitude normalized later
-                else:
-                    pos.iloc[i][t] = 0.0
+                    pos.loc[dates[i], t] = np.sign(prev[t])
 
         # If not locked by hold, assign new picks for today (signs only)
         for t in longs:
-            if pos.iloc[i][t] == 0.0:
-                pos.iloc[i][t] = +1.0
+            if pos.loc[dates[i], t] == 0.0:
+                pos.loc[dates[i], t] = +1.0
         for t in shorts:
-            if pos.iloc[i][t] == 0.0:
-                pos.iloc[i][t] = -1.0
+            if pos.loc[dates[i], t] == 0.0:
+                pos.loc[dates[i], t] = -1.0
 
         # Enforce sector and gross caps by scaling
-        w = pos.iloc[i].copy()
+        w = pos.loc[dates[i]].copy()
 
         # Sector cap: L1 within each sector bucket
         ser = pd.Series({t: sectors.get(t, "UNK") for t in cfg.universe})
@@ -82,14 +81,14 @@ def build_daily_positions(
         if gross > 0:
             w *= min(1.0, cfg.gross_cap / gross)
 
-        pos.iloc[i] = w
+        pos.loc[dates[i]] = w
 
         # Update hold ages
         if i == 0:
             hold_age = {t: (1 if w[t] != 0 else 0) for t in cfg.universe}
         else:
             for t in cfg.universe:
-                hold_age[t] = (hold_age[t] + 1) if w[t] == pos.iloc[i-1][t] and w[t] != 0 else (1 if w[t] != 0 else 0)
+                hold_age[t] = (hold_age[t] + 1) if w[t] == pos.loc[dates[i-1], t] and w[t] != 0 else (1 if w[t] != 0 else 0)
 
     return pos.astype(float)
 
