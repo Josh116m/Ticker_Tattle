@@ -162,3 +162,6 @@ Outputs:
 - Business rules remain frozen (v1.2): 2-day hold, 3L/3S, sector ≤30%, gross ≤150%, 5% daily stop, OPG timing.
 - `NBSI_OUT_ROOT` is honored by all scripts if set.
 - For safety, the submit path refuses without `--confirm "I UNDERSTAND"` and valid env creds.
+
+
+**Start In (Task Scheduler):** set to `D:\Ticker Tattle` to avoid relative-path issues when the job runs headless.
