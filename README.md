@@ -130,7 +130,7 @@ python -m unittest nbsi.phase5.tests.test_phase5_smoke -v
 
 ### Import a ready-made Scheduled Task (Windows)
 
-An XML is provided to run nightly maintenance at 18:00 Mon–Fri:
+An XML is provided to run nightly maintenance at 05:50 Mon–Fri (Central Time / local):
 - File: `scripts/NBElastic_Nightly_Maintenance.xml`
 - It runs: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\nightly_maintenance.ps1`
 - Working directory: `D:\Ticker Tattle` (edit in XML if your path differs)
@@ -139,7 +139,7 @@ Steps:
 1) Open Task Scheduler → Action → Import Task…
 2) Select `scripts\NBElastic_Nightly_Maintenance.xml`
 3) Set “Run whether user is logged on or not” and provide credentials.
-4) Save. The task will run at 18:00 local, Monday–Friday.
+4) Save. The task will run at 05:50 local (Central), Monday–Friday.
 
 
 
