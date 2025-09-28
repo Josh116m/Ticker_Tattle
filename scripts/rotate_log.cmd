@@ -1,13 +1,19 @@
 @echo off
-setlocal
+setlocal EnableDelayedExpansion
 set "LOG=%~1"
 if "%LOG%"=="" goto :eof
 
-REM Rotate qa_phase5.log -> qa_phase5.log.1 ... qa_phase5.log.7 (oldest dropped)
+REM Safe rotation: LOG -> LOG.1 ... LOG.7 (delete oldest), suppress errors/noise
 for /L %%i in (7,-1,2) do (
-  if exist "%LOG%.%%i-1" ren "%LOG%.%%i-1" "%~nx1.%%i"
+  set /a j=%%i-1
+  if exist "%LOG%.!j!" (
+    if exist "%LOG%.%%i" del /q "%LOG%.%%i" >nul 2>&1
+    ren "%LOG%.!j!" "%~nx1.%%i" >nul 2>&1
+  )
 )
-if exist "%LOG%" ren "%LOG%" "%~nx1.1"
+if exist "%LOG%" (
+  if exist "%LOG%.1" del /q "%LOG%.1" >nul 2>&1
+  ren "%LOG%" "%~nx1.1" >nul 2>&1
+)
 
 endlocal
-
