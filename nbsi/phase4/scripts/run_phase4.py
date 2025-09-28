@@ -9,6 +9,9 @@ import argparse
 import sys
 import os
 import json
+import getpass
+import platform
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any
 
@@ -121,6 +124,12 @@ def main_route(args) -> None:
     intents.to_parquet(intents_path, index=False)
 
     qa_path = os.path.join(out_dir, "qa_phase4.log")
+    # Run banner for QA clarity
+    with open(qa_path, "a", encoding="utf-8") as f:
+        f.write(f"\n--- run {datetime.now().isoformat(timespec='seconds')} ---\n")
+    # Provenance (host/user) for auditability
+    with open(qa_path, "a", encoding="utf-8") as f:
+        f.write(f"provenance: host={platform.node()} user={getpass.getuser()}\n")
     # Optional CSV emission for quick eyeballing
     emit_csv = str(getattr(args, "emit_csv", "false")).lower() in {"1","true","yes","y"}
     if emit_csv:
@@ -157,7 +166,7 @@ def main_route(args) -> None:
         with open(qa_path, "a", encoding="utf-8") as f:
             f.write(f"[route] SUBMITTED rows={len(submitted)} -> {os.path.relpath(sub_path)}\n")
 
-    print("PHASE 4 ROUTE (DRY) COMPLETE")
+    print("PHASE 4 ROUTE (DRY) COMPLETE" if dry else "PHASE 4 ROUTE (SUBMITTED) COMPLETE")
 
 
 def main() -> None:
