@@ -84,6 +84,14 @@ def compute_daily_scores(panel: pd.DataFrame,
         keep_cols = [c for c in V.columns if (stds.get(c, np.nan) > eps_std) and not V[c].isna().all()]
         dropped = [c for c in V.columns if c not in keep_cols]
         keep_count = len(keep_cols)
+
+        # Warn if sentiment feature has zero dispersion (broken attribution)
+        sentiment_cols = [c for c in feature_cols if 'polarity' in c.lower() or 'sentiment' in c.lower()]
+        for sc in sentiment_cols:
+            if sc in dropped:
+                if diag_log_path is not None:
+                    with open(diag_log_path, 'a', encoding='utf-8') as fh:
+                        fh.write(f"[phase3] WARN: {sc} feature dispersion=0 on {pd.to_datetime(dt).date()} — de-emphasized by entropy (attribution issue)\n")
         if keep_count == 0:
             # Degenerate: no dispersion; assign zero scores
             if diag_log_path is not None:
