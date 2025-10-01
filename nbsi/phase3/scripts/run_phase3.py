@@ -187,8 +187,8 @@ def main():
             cfg['risk_limits'][k] = dv
             ok_nums = False
 
-    # Load Phase-2 panel
-    panel_path = os.path.join('artifacts','phase2','sector_panel.parquet')
+    # Load Phase-2 panel (fixed: sector-specific sentiment attribution)
+    panel_path = os.path.join('artifacts','phase2','sector_panel_fixed.parquet')
     if not os.path.exists(panel_path):
         print('[FAIL] Missing Phase-2 panel artifact')
         sys.exit(2)
