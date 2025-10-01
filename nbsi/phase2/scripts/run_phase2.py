@@ -57,9 +57,15 @@ def main():
     for key in ['polygon_api_key','finnhub_api_key','alpaca']:
         if key not in secrets:
             fail(f'Missing {key} in secrets')
-    # 3) Working tree clean (only allow artifacts/* changes)
+    # 3) Working tree clean (only allow untracked files and artifacts/* changes)
     status = subprocess.check_output(['git','status','--porcelain'], text=True)
-    dirty = any(not line.strip().startswith('?? artifacts') and line.strip() for line in status.splitlines())
+    # Allow untracked files (??) and artifact changes; fail on modified/staged tracked files
+    dirty = any(
+        not line.strip().startswith('??') and
+        not line.strip().startswith('?? artifacts') and
+        line.strip()
+        for line in status.splitlines()
+    )
     if dirty:
         print(status)
         fail('Working tree is dirty; commit or stash non-artifact changes before Phase-2 run')

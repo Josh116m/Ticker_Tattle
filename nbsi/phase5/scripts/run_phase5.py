@@ -75,6 +75,22 @@ def run(from_root: Path, out_root: Path, phase3_root: Optional[Path] = None) -> 
     if phase3_root is None:
         phase3_root = Path("artifacts/phase3")
 
+    # Check for sentiment attribution issues (Phase-2 QA)
+    phase2_alerts = Path("artifacts/phase2/qa/alerts.log")
+    sentiment_alert = None
+    if phase2_alerts.exists():
+        try:
+            with open(phase2_alerts, 'r') as f:
+                content = f.read()
+                if 'IDENTICAL sentiment' in content or 'FAIL' in content:
+                    # Extract the alert message
+                    for line in content.splitlines():
+                        if 'sentiment-attr' in line:
+                            sentiment_alert = line.strip()
+                            break
+        except Exception:
+            pass
+
     # Run banner for QA clarity
     qa = out_root / "qa_phase5.log"
     from datetime import datetime as _dt
@@ -190,10 +206,12 @@ def run(from_root: Path, out_root: Path, phase3_root: Optional[Path] = None) -> 
         pass
 
     # QA notes
-    if qa_lines:
+    if qa_lines or sentiment_alert:
         lines.append("\n## QA notes\n")
         for q in qa_lines:
             lines.append(f"- {q}\n")
+        if sentiment_alert:
+            lines.append(f"- ⚠️  **ALERT**: {sentiment_alert}\n")
 
     # Artifact paths section
     lines.extend([
@@ -209,6 +227,8 @@ def run(from_root: Path, out_root: Path, phase3_root: Optional[Path] = None) -> 
     qa_text = ["QA PASS: equity_curve.png + daily_equity.csv written; "
                f"rows={len(df)}, fills_rows={fills_count}"]
     qa_text.extend(qa_lines)
+    if sentiment_alert:
+        qa_text.append(f"[phase5] ALERT: {sentiment_alert}")
     with open(qa, "a", encoding="utf-8") as f:
         f.write("\n".join(qa_text) + "\n")
     print("PHASE 5 REPORT COMPLETE")
